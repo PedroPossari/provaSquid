@@ -82,8 +82,8 @@ EOF
 
 # REINICIA O SERVIÇO DNS
 echo "Reiniciando o BIND9..."
-sudo systemctl restart bind9
-sudo systemctl enable bind9
+sudo systemctl restart named
+sudo systemctl enable named
 
 # CONFIGURA O DNS LOCAL NO SERVIDOR
 echo "Configurando o servidor para usar o próprio DNS..."
