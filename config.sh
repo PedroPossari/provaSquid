@@ -1,12 +1,16 @@
 #!/bin/bash
 
-echo "⏳ Atualizando pacotes..."
+echo "Iniciando o script de configuração do servidor..."
+
+# Atualização do sistema
 sudo apt update && sudo apt upgrade -y
 
-echo "📦 Instalando serviços necessários: DHCP, Squid, iptables-persistent..."
+# Instalação dos pacotes necessários
+echo "Instalando DHCP, Squid e iptables-persistent..."
 sudo apt install isc-dhcp-server squid iptables-persistent -y
 
-echo "🛜 Configurando IP fixo na interface enp0s8 (rede interna)..."
+# Configuração do IP fixo na interface da rede interna
+echo "Configurando IP fixo na interface enp0s8..."
 cat <<EOF | sudo tee /etc/netplan/01-netcfg.yaml
 network:
   version: 2
@@ -19,22 +23,25 @@ EOF
 
 sudo netplan apply
 
-echo "🔁 Ativando encaminhamento de pacotes..."
+# Habilitando o encaminhamento de pacotes
+echo "Habilitando o encaminhamento de pacotes..."
 echo "net.ipv4.ip_forward = 1" | sudo tee -a /etc/sysctl.conf
 sudo sysctl -p
 
-echo "🔥 Adicionando regras de NAT com iptables..."
+# Regras de NAT com iptables
+echo "Adicionando regras de NAT para compartilhamento de internet..."
 sudo iptables -t nat -A POSTROUTING -o enp0s3 -j MASQUERADE
 sudo iptables -A FORWARD -i enp0s8 -o enp0s3 -j ACCEPT
 sudo iptables -A FORWARD -i enp0s3 -o enp0s8 -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-echo "💾 Salvando regras do iptables..."
+# Salvando regras do iptables
 sudo netfilter-persistent save
 
-echo "🧭 Configurando interface para o servidor DHCP..."
+# Configuração do DHCP
+echo "Configurando o servidor DHCP para enp0s8..."
 sudo sed -i 's/INTERFACESv4=""/INTERFACESv4="enp0s8"/' /etc/default/isc-dhcp-server
 
-echo "📝 Configurando escopo do DHCP..."
+echo "Definindo o escopo de IPs para DHCP..."
 cat <<EOF | sudo tee /etc/dhcp/dhcpd.conf
 authoritative;
 default-lease-time 600;
@@ -47,11 +54,11 @@ subnet 192.168.10.0 netmask 255.255.255.0 {
 }
 EOF
 
-echo "🔁 Reiniciando serviço DHCP..."
 sudo systemctl restart isc-dhcp-server
 sudo systemctl enable isc-dhcp-server
 
-echo "🧼 Limpando e reescrevendo squid.conf com configuração mínima..."
+# Configuração do Squid
+echo "Configurando o Squid com regras básicas..."
 sudo tee /etc/squid/squid.conf > /dev/null <<EOF
 http_port 3128
 acl rede_interna src 192.168.10.0/24
@@ -60,8 +67,11 @@ http_access deny all
 visible_hostname servidor-squid
 EOF
 
-echo "🔁 Reiniciando serviço Squid..."
 sudo systemctl restart squid
 sudo systemctl enable squid
 
-echo "✅ Configuração finalizada com sucesso!"
+echo "----------------------------------------"
+echo " Script de configuração de rede"
+echo " Autor: Pedro Possari"
+echo "----------------------------------------"
+
