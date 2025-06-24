@@ -23,7 +23,7 @@ network:
     enp0s3:
       dhcp4: true
     enp0s8:
-      addresses: [192.168.10.1/24]
+      addresses: [192.168.20.1/24]
 EOF
 
 sudo netplan apply
@@ -52,10 +52,10 @@ authoritative;
 default-lease-time 600;
 max-lease-time 7200;
 
-subnet 192.168.10.0 netmask 255.255.255.0 {
-  range 192.168.10.100 192.168.10.200;
-  option routers 192.168.10.1;
-  option domain-name-servers 8.8.8.8, 1.1.1.1;
+subnet 192.168.20.0 netmask 255.255.255.0 {
+  range 192.168.20.100 192.168.20.120;
+  option routers 192.168.20.1;
+  option domain-name-servers 8.8.8.8, 8.8.4.4;
 }
 EOF
 
@@ -66,7 +66,7 @@ sudo systemctl enable isc-dhcp-server
 echo "Configurando o Squid com regras básicas..."
 sudo tee /etc/squid/squid.conf > /dev/null <<EOF
 http_port 3128
-acl rede_interna src 192.168.10.0/24
+acl rede_interna src 192.168.20.0/24
 http_access allow rede_interna
 http_access deny all
 visible_hostname servidor-squid
